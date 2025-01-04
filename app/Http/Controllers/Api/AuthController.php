@@ -8,8 +8,8 @@ use App\Helpers\ApiFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Carbon\Carbon;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -68,6 +68,46 @@ class AuthController extends Controller
         }
     }
 
+    public function register(Request $request)
+    {
+        try {
+            $params = $request->all();
+            $validator = Validator::make(
+                $params,
+                [
+                    'name' => 'required|string|max:255',
+                    'email' => 'required|email|unique:users,email',
+                    'password' => 'required|string|min:6|confirmed',
+                ],
+                [
+                    'name.required' => 'Name is required',
+                    'email.required' => 'Email is required',
+                    'email.email' => 'Email must be a valid email address',
+                    'email.unique' => 'Email is already in use',
+                    'password.required' => 'Password is required',
+                    'password.min' => 'Password must be at least :min characters',
+                    'password.confirmed' => 'Password confirmation does not match',
+                ]
+            );
+
+            if ($validator->fails()) {
+                return response()->json(ApiFormatter::createJson(400, 'Bad Request', $validator->errors()->all()), 400);
+            }
+
+            // Create the user
+            $user = User::create([
+                'name' => $params['name'],
+                'email' => $params['email'],
+                'password' => Hash::make($params['password']),
+            ]);
+
+            // Respond with success
+            return response()->json(ApiFormatter::createJson(201, 'Registration successful'), 201);
+        } catch (\Exception $e) {
+            return response()->json(ApiFormatter::createJson(500, 'Internal Server Error', $e->getMessage()), 500);
+        }
+    }
+
     public function me()
     {
         try {
@@ -93,7 +133,7 @@ class AuthController extends Controller
         $newToken = JWTAuth::refresh(JWTAuth::getToken());
 
         $currentDateTime = Carbon::now();
-        $expiredDateTime = $currentDateTime->addMinutes(JWTAuth::factory()->getTTL() *60);
+        $expiredDateTime = $currentDateTime->addMinutes(JWTAuth::factory()->getTTL() * 60);
 
         $info = [
             'type' => 'Bearer',
@@ -102,13 +142,12 @@ class AuthController extends Controller
         ];
 
         return response()->json(ApiFormatter::createJson(200, 'Refresh Successfully', $info), 200);
-
     }
 
 
     public function logout()
     {
         auth()->guard('api')->logout();
-        return response()->json(ApiFormatter::createJson(200,'Logout Successfully'),200);
-}
+        return response()->json(ApiFormatter::createJson(200, 'Logout Successfully'), 200);
+    }
 }
