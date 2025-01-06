@@ -2,8 +2,11 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\ApiFormatter;
+use App\Models\LogModel;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class Handler extends ExceptionHandler
 {
@@ -21,6 +24,33 @@ class Handler extends ExceptionHandler
      *
      * @var array<int, class-string<\Throwable>>
      */
+
+    public function render($request, Throwable $exception)
+    {
+        //Tangani error 404 not found
+        if ($exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            $user = null;
+            try {
+                $user = JWTAuth::parseToken()->authenticate();
+            } catch (\Exception $e) {
+                $user = null;
+            }
+
+            $filteredRequest = ApiFormatter::filterSensitiveData($request->all());
+            LogModel::create([
+                'user_id' => $user ? $user->id : null,
+                'log_method' => $request->method(),
+                'log_url' => $request->fullUrl(),
+                'log_ip' => $request->ip(),
+                'log_request' => json_encode($filteredRequest),
+                'log_response' => json_encode(ApiFormatter::createJson(404, 'Not Found', 'Route not Found')),
+            ]);
+
+            return response()->json(ApiFormatter::createJson(404, 'Not FOund', 'Route not Found'), 404);
+        }
+
+        return parent::render($request, $exception);
+    }
     protected $dontReport = [
         //
     ];
