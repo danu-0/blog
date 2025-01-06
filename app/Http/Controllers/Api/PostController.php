@@ -6,6 +6,8 @@ use App\Helpers\ApiFormatter;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Comment;
+use App\Models\Like;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -184,4 +186,56 @@ class PostController extends Controller
             return response()->json($response, 500);
         }
     }
+
+    //comments
+    public function addComment(Request $request, $postId)
+    {
+    $validated = $request->validate([
+        'comment' => 'required|string',
+    ]);
+
+    $comment = Comment::create([
+        'post_id' => $postId,
+        'user_id' => Auth::id(),
+        'comment' => $validated['comment'],
+    ]);
+
+    return response()->json(ApiFormatter::createJson(201, 'Comment added successfully!', $comment), 201);
+    }
+
+
+    public function getComments($postId)
+    {
+    $comments = Comment::where('post_id', $postId)->with('user')->latest()->get();
+
+    return response()->json(ApiFormatter::createJson(200, 'Comments retrieved successfully', $comments), 200);
+    }
+
+    //like and un like post
+    public function toggleLike($postId)
+    {
+    $like = Like::where('post_id', $postId)->where('user_id', Auth::id())->first();
+
+    if ($like) {
+        $like->delete();
+        return response()->json(ApiFormatter::createJson(200, 'Post unliked successfully'), 200);
+    } else {
+        $newLike = Like::create([
+            'post_id' => $postId,
+            'user_id' => Auth::id(),
+        ]);
+        return response()->json(ApiFormatter::createJson(201, 'Post liked successfully!', $newLike), 201);
+    }
+    }
+
+    //see qtt comment
+    public function getLikeCount($postId)
+    {
+    $likeCount = Like::where('post_id', $postId)->count();
+
+    return response()->json(ApiFormatter::createJson(200, 'Like count retrieved successfully', ['like_count' => $likeCount]), 200);
+    }
+
+
+
 }

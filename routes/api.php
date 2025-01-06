@@ -36,5 +36,13 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::put('/{postId}', [PostController::class, 'update']);
         Route::patch('/{postId}', [PostController::class, 'patch']);
         Route::delete('/{postId}', [PostController::class, 'delete']);
+
+        // Routes for Comments
+        Route::post('/{postId}/comment', [PostController::class, 'addComment']);
+        Route::get('/{postId}/comments', [PostController::class, 'getComments']);
+
+        // Routes for Likes
+        Route::post('/{postId}/like', [PostController::class, 'toggleLike']);
+        Route::get('/{postId}/likes', [PostController::class, 'getLikeCount']);
     });
 });
