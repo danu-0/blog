@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\PostController;
 
 /*
@@ -38,11 +40,11 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::delete('/{postId}', [PostController::class, 'delete']);
 
         // Routes for Comments
-        Route::post('/{postId}/comment', [PostController::class, 'addComment']);
-        Route::get('/{postId}/comments', [PostController::class, 'getComments']);
+        Route::post('/{postId}/comment', [CommentController::class, 'create']);
+        Route::get('/{postId}/comments', [CommentController::class, 'index']);
 
         // Routes for Likes
-        Route::post('/{postId}/like', [PostController::class, 'toggleLike']);
-        Route::get('/{postId}/likes', [PostController::class, 'getLikeCount']);
+        Route::post('/{postId}/like', [LikeController::class, 'create']);
+        Route::get('/{postId}/likes', [LikeController::class, 'index']);
     });
 });
